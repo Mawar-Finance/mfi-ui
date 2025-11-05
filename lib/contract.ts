@@ -1,59 +1,50 @@
-// Contract interaction utilities untuk LiskGarden DApp
-// Menggunakan Panna SDK & Thirdweb untuk berinteraksi dengan smart contract
+// ============================================
+// MAWAR FINANCE - Contract Interaction Layer
+// ============================================
+// Menggunakan Panna SDK & Thirdweb untuk berinteraksi dengan smart contracts
 
 import { liskSepolia } from 'panna-sdk'
 import { prepareContractCall, sendTransaction, readContract, waitForReceipt } from 'thirdweb/transaction'
 import { getContract } from 'thirdweb/contract'
-import { toWei } from 'thirdweb/utils'
+import { parseUnits, formatUnits } from 'ethers'
 import {
-  LISK_GARDEN_CONTRACT_ADDRESS,
-  LISK_GARDEN_ABI,
-  Plant,
-  GrowthStage,
-  STAGE_NAMES,
-  PLANT_PRICE,
-  HARVEST_REWARD,
-  STAGE_DURATION,
-  WATER_DEPLETION_TIME,
-  WATER_DEPLETION_RATE,
+  MFI_TOKEN_ADDRESS,
+  SAVINGS_NFT_ADDRESS,
+  EXCHANGE_ADDRESS,
+  SAVINGS_VAULT_ADDRESS,
+  MFI_TOKEN_ABI,
+  EXCHANGE_ABI,
+  SAVINGS_VAULT_ABI,
+  SAVINGS_NFT_ABI,
+  Bouquet,
+  formatMFI,
+  formatETH,
+  calculateRoseCount,
 } from '@/types/contracts'
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-// Convert raw contract data menjadi typed Plant object
-export function parsePlantData(rawPlant: any): Plant {
-  // Handle both array-like tuples and object-like structures
-  const isArray = Array.isArray(rawPlant)
-
-  return {
-    id: BigInt(isArray ? rawPlant[0] ?? 0 : rawPlant.id ?? 0),
-    owner: isArray ? rawPlant[1] ?? '' : rawPlant.owner ?? '',
-    stage: Number(isArray ? rawPlant[2] ?? 0 : rawPlant.stage ?? 0) as GrowthStage,
-    plantedDate: BigInt(isArray ? rawPlant[3] ?? 0 : rawPlant.plantedDate ?? 0),
-    lastWatered: BigInt(isArray ? rawPlant[4] ?? 0 : rawPlant.lastWatered ?? 0),
-    waterLevel: Number(isArray ? rawPlant[5] ?? 0 : rawPlant.waterLevel ?? 0),
-    exists: Boolean(isArray ? rawPlant[6] ?? false : rawPlant.exists ?? false),
-    isDead: Boolean(isArray ? rawPlant[7] ?? false : rawPlant.isDead ?? false),
-  }
-}
 
 // ============================================
 // CONTRACT WRITE FUNCTIONS (Mengubah state)
 // ============================================
 
-// Plant a new seed (payable - butuh ETH)
-export async function plantSeed(client: any, account: any) {
+/**
+ * Buy MFI tokens with ETH via Exchange contract
+ * @param client - Panna SDK client
+ * @param account - Active wallet account
+ * @param ethAmount - Amount of ETH to spend (as string, e.g., "0.01")
+ * @returns Transaction result
+ */
+export async function buyMFI(client: any, account: any, ethAmount: string) {
+  const ethValue = parseUnits(ethAmount, 18)
+  
   const tx = prepareContractCall({
     contract: getContract({
       client,
       chain: liskSepolia,
-      address: LISK_GARDEN_CONTRACT_ADDRESS,
+      address: EXCHANGE_ADDRESS,
     }),
-    method: 'function plantSeed() payable returns (uint256)',
-    params: [],
-    value: toWei(PLANT_PRICE), // Convert 0.001 ETH ke wei
+    method: 'function buyMFI(address recipient) payable',
+    params: [account.address],
+    value: ethValue,
   })
 
   const result = await sendTransaction({
@@ -61,22 +52,27 @@ export async function plantSeed(client: any, account: any) {
     transaction: tx,
   })
 
-  // Wait sampai transaction di-mine
   await waitForReceipt(result)
-
   return result
 }
 
-// Water a plant
-export async function waterPlant(client: any, account: any, plantId: bigint) {
+/**
+ * Approve SavingsVault to spend MFI tokens
+ * @param client - Panna SDK client
+ * @param account - Active wallet account
+ * @param amount - Amount of MFI to approve (in MFI units, e.g., "30")
+ */
+export async function approveMFI(client: any, account: any, amount: string) {
+  const amountWei = parseUnits(amount, 18)
+  
   const tx = prepareContractCall({
     contract: getContract({
       client,
       chain: liskSepolia,
-      address: LISK_GARDEN_CONTRACT_ADDRESS,
+      address: MFI_TOKEN_ADDRESS,
     }),
-    method: 'function waterPlant(uint256 plantId)',
-    params: [plantId],
+    method: 'function approve(address spender, uint256 amount) returns (bool)',
+    params: [SAVINGS_VAULT_ADDRESS, amountWei],
   })
 
   const result = await sendTransaction({
@@ -85,20 +81,26 @@ export async function waterPlant(client: any, account: any, plantId: bigint) {
   })
 
   await waitForReceipt(result)
-
   return result
 }
 
-// Harvest a blooming plant
-export async function harvestPlant(client: any, account: any, plantId: bigint) {
+/**
+ * Deposit MFI tokens to mint/upgrade NFT bouquet
+ * @param client - Panna SDK client
+ * @param account - Active wallet account
+ * @param amount - Amount of MFI to deposit (in MFI units, e.g., "30")
+ */
+export async function depositMFI(client: any, account: any, amount: string) {
+  const amountWei = parseUnits(amount, 18)
+  
   const tx = prepareContractCall({
     contract: getContract({
       client,
       chain: liskSepolia,
-      address: LISK_GARDEN_CONTRACT_ADDRESS,
+      address: SAVINGS_VAULT_ADDRESS,
     }),
-    method: 'function harvestPlant(uint256 plantId)',
-    params: [plantId],
+    method: 'function deposit(uint256 amount)',
+    params: [amountWei],
   })
 
   const result = await sendTransaction({
@@ -107,20 +109,24 @@ export async function harvestPlant(client: any, account: any, plantId: bigint) {
   })
 
   await waitForReceipt(result)
-
   return result
 }
 
-// Update plant stage manually (sync dengan blockchain)
-export async function updatePlantStage(client: any, account: any, plantId: bigint) {
+/**
+ * Redeem (burn) NFT bouquet to get MFI back
+ * @param client - Panna SDK client
+ * @param account - Active wallet account
+ * @param tokenId - NFT token ID to redeem
+ */
+export async function redeemNFT(client: any, account: any, tokenId: bigint) {
   const tx = prepareContractCall({
     contract: getContract({
       client,
       chain: liskSepolia,
-      address: LISK_GARDEN_CONTRACT_ADDRESS,
+      address: SAVINGS_VAULT_ADDRESS,
     }),
-    method: 'function updatePlantStage(uint256 plantId)',
-    params: [plantId],
+    method: 'function redeem(uint256 tokenId)',
+    params: [tokenId],
   })
 
   const result = await sendTransaction({
@@ -129,174 +135,243 @@ export async function updatePlantStage(client: any, account: any, plantId: bigin
   })
 
   await waitForReceipt(result)
-
   return result
 }
 
 // ============================================
-// CONTRACT READ FUNCTIONS (Read-only, tidak butuh gas)
+// CONTRACT READ FUNCTIONS (Read-only)
 // ============================================
 
-// Get single plant data
-export async function getPlant(client: any, plantId: bigint): Promise<Plant> {
+/**
+ * Get MFI token balance for an address
+ */
+export async function getMFIBalance(client: any, address: string): Promise<bigint> {
   const contract = getContract({
     client,
     chain: liskSepolia,
-    address: LISK_GARDEN_CONTRACT_ADDRESS,
+    address: MFI_TOKEN_ADDRESS,
   })
 
-  const rawPlant = await readContract({
+  const balance = await readContract({
     contract,
-    method: 'function getPlant(uint256 plantId) view returns (uint256 id, address owner, uint8 stage, uint256 plantedDate, uint256 lastWatered, uint8 waterLevel, bool exists, bool isDead)',
-    params: [plantId],
+    method: 'function balanceOf(address account) view returns (uint256)',
+    params: [address],
   })
 
-  return parsePlantData(rawPlant)
+  return balance
 }
 
-// Calculate current water level dari blockchain
-export async function calculateWaterLevel(client: any, plantId: bigint, plant?: Plant): Promise<number> {
-  // Optimization: Skip blockchain call untuk blooming plants
-  // Blooming plants tidak kehilangan air
-  if (plant && plant.stage === GrowthStage.BLOOMING) {
-    return plant.waterLevel
+/**
+ * Get MFI allowance for SavingsVault
+ */
+export async function getMFIAllowance(client: any, ownerAddress: string): Promise<bigint> {
+  const contract = getContract({
+    client,
+    chain: liskSepolia,
+    address: MFI_TOKEN_ADDRESS,
+  })
+
+  const allowance = await readContract({
+    contract,
+    method: 'function allowance(address owner, address spender) view returns (uint256)',
+    params: [ownerAddress, SAVINGS_VAULT_ADDRESS],
+  })
+
+  return allowance
+}
+
+/**
+ * Preview redemption details (principal, fee, payout)
+ */
+export async function previewRedeem(
+  client: any,
+  tokenId: bigint
+): Promise<{ principal: bigint; fee: bigint; payout: bigint }> {
+  const contract = getContract({
+    client,
+    chain: liskSepolia,
+    address: SAVINGS_VAULT_ADDRESS,
+  })
+
+  const result = await readContract({
+    contract,
+    method: 'function previewRedeem(uint256 tokenId) view returns (uint256 principal, uint256 fee, uint256 payout)',
+    params: [tokenId],
+  })
+
+  return {
+    principal: result[0],
+    fee: result[1],
+    payout: result[2],
   }
-
-  const contract = getContract({
-    client,
-    chain: liskSepolia,
-    address: LISK_GARDEN_CONTRACT_ADDRESS,
-  })
-
-  const waterLevel = await readContract({
-    contract,
-    method: 'function calculateWaterLevel(uint256 plantId) view returns (uint8)',
-    params: [plantId],
-  })
-
-  return Number(waterLevel)
 }
 
-// Get all plants milik user
-export async function getUserPlants(client: any, userAddress: string): Promise<bigint[]> {
+/**
+ * Get all NFT token IDs owned by user
+ */
+export async function getUserBouquets(client: any, userAddress: string): Promise<bigint[]> {
   const contract = getContract({
     client,
     chain: liskSepolia,
-    address: LISK_GARDEN_CONTRACT_ADDRESS,
+    address: SAVINGS_VAULT_ADDRESS,
   })
 
-  const plantIds = await readContract({
+  const tokenIds = await readContract({
     contract,
-    method: 'function getUserPlants(address user) view returns (uint256[])',
+    method: 'function getUserDeposits(address user) view returns (uint256[])',
     params: [userAddress],
   })
 
-  return plantIds.map((id: any) => BigInt(id))
+  return tokenIds.map((id: any) => BigInt(id))
 }
 
-// ============================================
-// CLIENT-SIDE HELPER FUNCTIONS (Tidak hit blockchain)
-// ============================================
+/**
+ * Get detailed bouquet data for a token ID
+ */
+export async function getBouquetDetails(client: any, tokenId: bigint): Promise<Bouquet> {
+  const nftContract = getContract({
+    client,
+    chain: liskSepolia,
+    address: SAVINGS_NFT_ADDRESS,
+  })
 
-// Format plant age menjadi human-readable string
-export function formatPlantAge(plantedDate: bigint): string {
-  const now = Date.now()
-  const planted = Number(plantedDate) * 1000
-  const diff = now - planted
+  try {
+    // Get owner
+    const owner = await readContract({
+      contract: nftContract,
+      method: 'function ownerOf(uint256 tokenId) view returns (address)',
+      params: [tokenId],
+    })
 
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+    // Try to get value - if this fails, we'll calculate it from rose count
+    let value: bigint
+    let roseCount: number
 
-  if (days > 0) return `${days} hari lalu`
-  if (hours > 0) return `${hours}j ${minutes}m lalu`
-  if (minutes > 0) return `${minutes}m ${seconds}d lalu`
-  return `${seconds}d lalu`
-}
+    try {
+      // Try getValue function
+      value = await readContract({
+        contract: nftContract,
+        method: 'function getValue(uint256 tokenId) view returns (uint256)',
+        params: [tokenId],
+      }) as bigint
+      
+      // Calculate rose count from value (each rose = 10 MFI = 10e18 wei)
+      roseCount = Number(value / (10n * 10n ** 18n))
+    } catch (err) {
+      console.log('getValue not available, trying getRoseCount:', err)
+      
+      // Try getRoseCount function
+      try {
+        const count = await readContract({
+          contract: nftContract,
+          method: 'function getRoseCount(uint256 tokenId) view returns (uint256)',
+          params: [tokenId],
+        })
+        roseCount = Number(count)
+        value = BigInt(roseCount) * 10n * 10n ** 18n
+      } catch (err2) {
+        console.log('getRoseCount not available, using tokenURI:', err2)
+        
+        // Fallback: try to get from SavingsVault
+        const vaultContract = getContract({
+          client,
+          chain: liskSepolia,
+          address: SAVINGS_VAULT_ADDRESS,
+        })
+        
+        try {
+          // Try to preview redeem to get the value
+          const preview = await readContract({
+            contract: vaultContract,
+            method: 'function previewRedeem(uint256 tokenId) view returns (uint256 principal, uint256 fee, uint256 payout)',
+            params: [tokenId],
+          })
+          
+          value = preview[0] as bigint // principal
+          roseCount = Number(value / (10n * 10n ** 18n))
+        } catch (err3) {
+          console.error('All methods failed, using defaults:', err3)
+          // Last resort: assume 1 rose
+          roseCount = 1
+          value = 10n * 10n ** 18n
+        }
+      }
+    }
 
-// Format last watered time
-export function formatLastWatered(lastWatered: bigint): string {
-  return formatPlantAge(lastWatered)
-}
-
-// Get stage display name
-export function getStageDisplayName(stage: GrowthStage): string {
-  return STAGE_NAMES[stage]
-}
-
-// Check apakah plant bisa di-harvest
-export function canHarvest(plant: Plant): boolean {
-  return plant.stage === GrowthStage.BLOOMING && plant.exists && !plant.isDead
-}
-
-// Calculate plant progress percentage
-export function getPlantProgress(plant: Plant): number {
-  const now = Date.now() / 1000
-  const planted = Number(plant.plantedDate)
-  const timePassed = now - planted
-
-  if (plant.stage === GrowthStage.BLOOMING) return 100
-
-  // Use STAGE_DURATION constant (60 seconds per stage)
-  const currentStageStart = Number(plant.stage) * STAGE_DURATION
-  const currentStageProgress = ((timePassed - currentStageStart) / STAGE_DURATION) * 25
-
-  return Math.min(Number(plant.stage) * 25 + currentStageProgress, 100)
-}
-
-// Calculate current water level (client-side, no blockchain call)
-export function getClientWaterLevel(plant: Plant): number {
-  if (!plant.exists || plant.isDead) return 0
-
-  // Blooming plants tidak kehilangan air - mereka siap panen!
-  if (plant.stage === GrowthStage.BLOOMING) {
-    return plant.waterLevel
+    return {
+      tokenId,
+      owner: owner as string,
+      roseCount,
+      totalValue: value,
+      exists: true,
+    }
+  } catch (err) {
+    console.error(`Failed to fetch bouquet ${tokenId}:`, err)
+    throw err
   }
-
-  const now = Date.now() / 1000
-  const timeSinceWatered = now - Number(plant.lastWatered)
-  const depletionIntervals = Math.floor(timeSinceWatered / WATER_DEPLETION_TIME)
-  const waterLost = depletionIntervals * WATER_DEPLETION_RATE
-
-  if (waterLost >= plant.waterLevel) return 0
-
-  return plant.waterLevel - waterLost
 }
 
-// Check apakah plant butuh disiram (di bawah 50%)
-export function needsWater(plant: Plant): boolean {
-  if (plant.isDead || !plant.exists) return false
-  if (plant.stage === GrowthStage.BLOOMING) return false
-  return getClientWaterLevel(plant) < 50
+/**
+ * Get NFT balance for user
+ */
+export async function getNFTBalance(client: any, address: string): Promise<number> {
+  const contract = getContract({
+    client,
+    chain: liskSepolia,
+    address: SAVINGS_NFT_ADDRESS,
+  })
+
+  const balance = await readContract({
+    contract,
+    method: 'function balanceOf(address owner) view returns (uint256)',
+    params: [address],
+  })
+
+  return Number(balance)
 }
 
-// Check apakah plant dalam kondisi kritis (di bawah 20%)
-export function isCritical(plant: Plant): boolean {
-  if (plant.isDead || !plant.exists) return false
-  if (plant.stage === GrowthStage.BLOOMING) return false
-  return getClientWaterLevel(plant) < 20
+// ============================================
+// CLIENT-SIDE HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Check if user needs to approve more MFI
+ */
+export async function needsApproval(
+  client: any,
+  userAddress: string,
+  requiredAmount: string
+): Promise<boolean> {
+  const allowance = await getMFIAllowance(client, userAddress)
+  const required = parseUnits(requiredAmount, 18)
+  return allowance < required
 }
 
-// Calculate expected stage berdasarkan waktu
-export function getExpectedStage(plant: Plant): GrowthStage {
-  if (plant.isDead || !plant.exists) return plant.stage
-
-  const now = Date.now() / 1000
-  const planted = Number(plant.plantedDate)
-  const timePassed = now - planted
-
-  // Calculate stage berdasarkan waktu
-  const calculatedStage = Math.min(Math.floor(timePassed / STAGE_DURATION), 3)
-  return calculatedStage as GrowthStage
+/**
+ * Format bouquet display text
+ */
+export function formatBouquetDisplay(bouquet: Bouquet): string {
+  const roses = bouquet.roseCount === 1 ? '1 rose' : `${bouquet.roseCount} roses`
+  const value = formatMFI(bouquet.totalValue)
+  return `${roses} (${value} MFI)`
 }
 
-// Check apakah plant stage perlu di-sync
-export function isStageOutOfSync(plant: Plant): boolean {
-  if (plant.isDead || !plant.exists) return false
-  const expectedStage = getExpectedStage(plant)
-  return plant.stage < expectedStage
+/**
+ * Calculate how many more MFI needed to reach next rose
+ */
+export function getMFIToNextRose(currentValue: bigint): bigint {
+  const mfiPerRose = 10n * 10n ** 18n
+  const currentRoses = currentValue / mfiPerRose
+  const nextRoseValue = (currentRoses + 1n) * mfiPerRose
+  return nextRoseValue - currentValue
 }
 
-// Export constants
-export { LISK_GARDEN_CONTRACT_ADDRESS, PLANT_PRICE, HARVEST_REWARD, STAGE_DURATION }
+// Export contract addresses for convenience
+export {
+  MFI_TOKEN_ADDRESS,
+  SAVINGS_NFT_ADDRESS,
+  EXCHANGE_ADDRESS,
+  SAVINGS_VAULT_ADDRESS,
+  formatMFI,
+  formatETH,
+}

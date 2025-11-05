@@ -12,7 +12,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         {children}
-        <Toaster />
+        <Toaster 
+          position="bottom-right"
+          expand={false}
+          richColors
+          closeButton
+        />
       </ThemeProvider>
     </PannaProvider>
   );

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { useActiveAccount, usePanna } from 'panna-sdk'
-import { LISK_GARDEN_CONTRACT_ADDRESS } from '@/lib/contract'
+import { SAVINGS_VAULT_ADDRESS } from '@/types/contracts'
 
 /**
  * Hook untuk get Panna client dan active account
@@ -18,7 +18,7 @@ export function useContract() {
       account: activeAccount || null,
       isConnected: !!activeAccount && !!client,
       address: activeAccount?.address || null,
-      contractAddress: LISK_GARDEN_CONTRACT_ADDRESS,
+      vaultAddress: SAVINGS_VAULT_ADDRESS,
     }
   }, [activeAccount, client])
 
