@@ -4,19 +4,23 @@ import BouquetCard from "@/components/bouquet-card"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Plus, Loader2, Flower2, RefreshCw, ShoppingCart } from "lucide-react"
-import { useBouquets } from "@/hooks/useBouquets"
 import { useContract } from "@/hooks/useContract"
 import { toast } from "sonner"
 import { useState } from "react"
 import BuyMFIModal from "@/components/buy-mfi-modal"
 
 interface SavingsGridProps {
+  bouquetsData: {
+    bouquets: any[]
+    isLoading: boolean
+    refresh: () => Promise<void>
+  }
   onSelectBouquet: (tokenId: bigint) => void
   onDeposit: () => void
 }
 
-export default function SavingsGrid({ onSelectBouquet, onDeposit }: SavingsGridProps) {
-  const { bouquets, isLoading, refresh } = useBouquets()
+export default function SavingsGrid({ bouquetsData, onSelectBouquet, onDeposit }: SavingsGridProps) {
+  const { bouquets, isLoading, refresh } = bouquetsData
   const { isConnected } = useContract()
   const [showBuyModal, setShowBuyModal] = useState(false)
 
@@ -137,7 +141,11 @@ export default function SavingsGrid({ onSelectBouquet, onDeposit }: SavingsGridP
       </div>
 
       {/* Buy MFI Modal */}
-      <BuyMFIModal isOpen={showBuyModal} onClose={() => setShowBuyModal(false)} />
+      <BuyMFIModal 
+        isOpen={showBuyModal} 
+        onClose={() => setShowBuyModal(false)}
+        onSuccess={refresh}
+      />
     </>
   )
 }

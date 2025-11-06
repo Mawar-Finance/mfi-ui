@@ -11,7 +11,10 @@ import { useBouquets } from "@/hooks/useBouquets"
 export default function Home() {
   const [selectedBouquetId, setSelectedBouquetId] = useState<bigint | null>(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
-  const { bouquets } = useBouquets()
+  
+  // Single source of truth for all bouquet data
+  const bouquetsData = useBouquets()
+  const { bouquets, refresh } = bouquetsData
 
   const selectedBouquet = bouquets.find((b) => b.tokenId === selectedBouquetId) || null
 
@@ -20,20 +23,31 @@ export default function Home() {
       <SavingsHeader />
       <div className="flex gap-6 p-6 max-w-7xl mx-auto">
         <main className="flex-1">
-          <SavingsGrid onSelectBouquet={setSelectedBouquetId} onDeposit={() => setShowDepositModal(true)} />
+          <SavingsGrid 
+            bouquetsData={bouquetsData}
+            onSelectBouquet={setSelectedBouquetId} 
+            onDeposit={() => setShowDepositModal(true)} 
+          />
         </main>
         <aside className="w-80">
-          <StatsSidebar selectedBouquetId={selectedBouquetId} />
+          <StatsSidebar 
+            bouquetsData={bouquetsData}
+            selectedBouquetId={selectedBouquetId} 
+          />
         </aside>
       </div>
 
-      {/* Modals */}
+      {/* Modals - pass refresh function to sync state */}
       <BouquetDetailsModal
         bouquet={selectedBouquet}
         isOpen={!!selectedBouquetId}
         onClose={() => setSelectedBouquetId(null)}
       />
-      <DepositModal isOpen={showDepositModal} onClose={() => setShowDepositModal(false)} />
+      <DepositModal 
+        isOpen={showDepositModal} 
+        onClose={() => setShowDepositModal(false)}
+        onSuccess={refresh}
+      />
     </div>
   )
 }

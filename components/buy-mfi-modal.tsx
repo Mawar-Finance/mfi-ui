@@ -9,17 +9,16 @@ import { Label } from "@/components/ui/label"
 import { Coins, TrendingUp, AlertCircle } from "lucide-react"
 import { useContract } from "@/hooks/useContract"
 import { buyMFI } from "@/lib/contract"
-import { useBouquets } from "@/hooks/useBouquets"
 import { toast } from "sonner"
 
 interface BuyMFIModalProps {
   isOpen: boolean
   onClose: () => void
+  onSuccess?: () => void | Promise<void>
 }
 
-export default function BuyMFIModal({ isOpen, onClose }: BuyMFIModalProps) {
+export default function BuyMFIModal({ isOpen, onClose, onSuccess }: BuyMFIModalProps) {
   const { client, account } = useContract()
-  const { refresh } = useBouquets()
   const [ethAmount, setEthAmount] = useState("0.01")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -43,18 +42,19 @@ export default function BuyMFIModal({ isOpen, onClose }: BuyMFIModalProps) {
 
       await buyMFI(client, account, ethAmount)
 
-      const mfiReceived = amount * 10_000_000
+      const mfiReceived = amount * 300_000_000
       toast.success("Purchase successful!", {
         description: `You received ${mfiReceived.toLocaleString()} MFI tokens 🎉`,
       })
 
-      // Wait a bit for blockchain to update, then refresh
-      setTimeout(async () => {
-        await refresh()
-      }, 2000)
-      
       onClose()
       setEthAmount("0.01")
+      
+      if (onSuccess) {
+        setTimeout(async () => {
+          await onSuccess()
+        }, 3000)
+      }
     } catch (err: any) {
       console.error("Error buying MFI:", err)
       toast.error("Purchase failed", {
@@ -65,7 +65,7 @@ export default function BuyMFIModal({ isOpen, onClose }: BuyMFIModalProps) {
     }
   }
 
-  const mfiAmount = (parseFloat(ethAmount || "0") * 3000).toLocaleString()
+  const mfiAmount = (parseFloat(ethAmount || "0") * 300_000_000).toLocaleString()
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -83,7 +83,7 @@ export default function BuyMFIModal({ isOpen, onClose }: BuyMFIModalProps) {
           <Card className="p-4 bg-blue-500/10 border-blue-500/30">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Exchange Rate</span>
-              <span className="font-bold text-foreground">1 ETH = 3,000 MFI</span>
+              <span className="font-bold text-foreground">1 ETH = 300,000,000 MFI</span>
             </div>
           </Card>
 
@@ -101,7 +101,7 @@ export default function BuyMFIModal({ isOpen, onClose }: BuyMFIModalProps) {
               disabled={isLoading}
             />
             <p className="text-xs text-muted-foreground">
-              Minimum: 0.001 ETH
+              Minimum: 0,0000001 ETH
             </p>
           </div>
 

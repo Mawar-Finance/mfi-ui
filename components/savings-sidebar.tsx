@@ -2,16 +2,24 @@
 
 import { Card } from "@/components/ui/card"
 import { Flower2, Sparkles, Coins, TrendingUp } from "lucide-react"
-import { useBouquets } from "@/hooks/useBouquets"
 import { useContract } from "@/hooks/useContract"
-import { formatMFI, formatETH } from "@/lib/contract"
+import { formatMFI } from "@/lib/contract"
+import { CheckCircle } from "lucide-react"
 
 interface StatsSidebarProps {
+  bouquetsData: {
+    bouquets: any[]
+    mfiBalance: bigint
+    nftCount: number
+    isLoading: boolean
+    error: string | null
+    refresh: () => Promise<void>
+  }
   selectedBouquetId: bigint | null
 }
 
-export default function StatsSidebar({ selectedBouquetId }: StatsSidebarProps) {
-  const { bouquets, mfiBalance, nftCount } = useBouquets()
+export default function StatsSidebar({ bouquetsData, selectedBouquetId }: StatsSidebarProps) {
+  const { bouquets, mfiBalance, nftCount } = bouquetsData
   const { isConnected, address } = useContract()
 
   const totalRoses = bouquets.reduce((sum, b) => sum + b.roseCount, 0)
@@ -93,7 +101,7 @@ export default function StatsSidebar({ selectedBouquetId }: StatsSidebarProps) {
         <h3 className="font-semibold text-foreground mb-3">How It Works</h3>
         <div className="space-y-2 text-xs text-muted-foreground">
           <p>1. Buy $MFI tokens with ETH</p>
-          <p>2. Deposit 10 MFI → Get 1 rose 🌹</p>
+          <p>2. Deposit 10 MFI → Get 1 rose </p>
           <p>3. Keep depositing → Grow bouquet (max 10 roses)</p>
           <p>4. Redeem NFT → Get MFI back (minus 2.5% fee)</p>
           <p className="text-rose-500 font-semibold pt-2">💐 Each rose = 10 MFI deposited!</p>
@@ -112,7 +120,7 @@ export default function StatsSidebar({ selectedBouquetId }: StatsSidebarProps) {
         <div className="space-y-3 text-sm">
           <div className="p-3 rounded bg-blue-500/10 border border-blue-500/20">
             <p className="text-xs text-muted-foreground mb-1">1 ETH</p>
-            <p className="font-semibold text-foreground">= 3,000 MFI</p>
+            <p className="font-semibold text-foreground">= 300,000,000 MFI</p>
           </div>
           <div className="p-3 rounded bg-rose-500/10 border border-rose-500/20">
             <p className="text-xs text-muted-foreground mb-1">Redemption Fee</p>
@@ -131,11 +139,22 @@ export default function StatsSidebar({ selectedBouquetId }: StatsSidebarProps) {
           Why Save Here?
         </h3>
         <div className="space-y-2 text-xs text-muted-foreground">
-          <p>✅ On-chain proof of savings</p>
-          <p>✅ Beautiful NFT receipts</p>
-          <p>✅ Withdraw anytime</p>
-          <p>✅ Transparent & secure</p>
-          <p className="text-primary font-semibold pt-2">🌹 Build wealth, one rose at a time!</p>
+          <div className="flex space-x-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span> On-chain proof of savings</span>
+          </div>
+          <div className="flex space-x-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span> Beautiful NFT receipts</span>
+          </div>  
+          <div className="flex space-x-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span> Withdraw anytime</span>
+          </div>
+          <div className="flex space-x-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span> Transparent & secure</span>
+          </div>
         </div>
       </Card>
     </div>

@@ -9,17 +9,17 @@ import { Label } from "@/components/ui/label"
 import { Sparkles, Coins, TrendingUp } from "lucide-react"
 import { useBouquets } from "@/hooks/useBouquets"
 import { useContract } from "@/hooks/useContract"
-import { approveMFI, depositMFI, needsApproval } from "@/lib/contract"
+import { approveMFI, depositMFI, formatMFI, needsApproval } from "@/lib/contract"
 import { toast } from "sonner"
-import { parseUnits } from "ethers"
 
 interface DepositModalProps {
   isOpen: boolean
   onClose: () => void
+  onSuccess?: () => void | Promise<void>
 }
 
-export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
-  const { refresh, mfiBalance } = useBouquets()
+export default function DepositModal({ isOpen, onClose, onSuccess }: DepositModalProps) {
+  const { mfiBalance } = useBouquets()
   const { client, account } = useContract()
   const [amount, setAmount] = useState("10")
   const [isLoading, setIsLoading] = useState(false)
@@ -68,16 +68,17 @@ export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
       await depositMFI(client, account, amount)
 
       toast.success("Deposit successful!", {
-        description: `${amount} MFI deposited. Check your new roses! 🌹`,
+        description: `${amount} MFI deposited. Your bouquet will update shortly! 🌹`,
       })
 
-      // Wait a bit for blockchain to update, then refresh
-      setTimeout(async () => {
-        await refresh()
-      }, 2000)
-      
       onClose()
       setAmount("10")
+      
+      if (onSuccess) {
+        setTimeout(async () => {
+          await onSuccess()
+        }, 3000)
+      }
     } catch (err: any) {
       console.error("Error depositing:", err)
       toast.error("Deposit failed", {
@@ -89,7 +90,7 @@ export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
   }
 
   const roses = Math.floor(parseFloat(amount || "0") / 10)
-  const mfiBalanceFormatted = (Number(mfiBalance) / Number(10n ** 18n)).toFixed(2)
+  const mfiBalanceFormatted = formatMFI(mfiBalance, 2)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
