@@ -56,7 +56,7 @@ export default function BouquetCard({ bouquet }: { bouquet: Bouquet }) {
       className={`overflow-hidden transition-all duration-300 ease-out animate-grow border-2 cursor-pointer group hover:shadow-lg hover:-translate-y-1 ${ROSE_COUNT_BORDERS[colorCategory]} hover:border-opacity-100`}
     >
       {/* Bouquet visualization */}
-      <div className={`h-48 flex items-center justify-center relative overflow-hidden transition-all duration-300 ease-out bg-gradient-to-b ${ROSE_COUNT_COLORS[colorCategory]} ${ROSE_COUNT_HOVER[colorCategory]}`}>
+      <div className={`h-48 flex items-center justify-center relative overflow-hidden transition-all duration-300 ease-out bg-linear-to-b ${ROSE_COUNT_COLORS[colorCategory]} ${ROSE_COUNT_HOVER[colorCategory]}`}>
         <div className="flex flex-wrap gap-2 justify-center items-center max-w-[200px]">
           {renderRoses(bouquet.roseCount)}
         </div>

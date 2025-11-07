@@ -140,7 +140,7 @@ export default function BuyMFIModal({ isOpen, onClose, onSuccess }: BuyMFIModalP
           {/* Action buttons */}
           <div className="flex gap-2 pt-2">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={onClose}
               className="flex-1 bg-transparent"
               disabled={isLoading}
@@ -150,7 +150,7 @@ export default function BuyMFIModal({ isOpen, onClose, onSuccess }: BuyMFIModalP
             <Button
               onClick={handleBuy}
               disabled={isLoading || parseFloat(ethAmount || "0") <= 0}
-              className="flex-1 gap-2 bg-green-500 hover:bg-green-600 text-white"
+              className="flex-1"
             >
               {isLoading ? (
                 <>

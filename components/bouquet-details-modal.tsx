@@ -85,10 +85,10 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
 
       await refresh()
       onClose()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error redeeming:", err)
       toast.error("Redemption failed", {
-        description: err.message || "Please try again",
+        description: (err as Error).message || "Please try again",
       })
     } finally {
       setIsLoading(false)
@@ -107,7 +107,7 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
 
         <div className="space-y-6">
           {/* Bouquet visualization */}
-          <div className="h-48 rounded-lg flex items-center justify-center relative overflow-hidden bg-gradient-to-b from-rose-50 to-pink-50 dark:from-rose-950 dark:to-pink-950">
+          <div className="h-48 rounded-lg flex items-center justify-center relative overflow-hidden bg-linear-to-b from-rose-50 to-pink-50 dark:from-rose-950 dark:to-pink-950">
             <div className="flex flex-wrap gap-2 justify-center items-center max-w-[250px]">
               {renderRoses(bouquet.roseCount)}
             </div>
@@ -192,7 +192,7 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
             {/* Warning */}
             <Card className="p-3 bg-orange-500/10 border-orange-500/30">
               <div className="flex gap-2">
-                <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
                   <strong className="text-foreground">Warning:</strong> Redeeming will burn this NFT permanently and return your MFI minus the 2.5% platform fee.
                 </p>
@@ -203,7 +203,7 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
           {/* Actions */}
           <div className="flex gap-2 pt-2">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={onClose}
               className="flex-1"
               disabled={isLoading}
@@ -213,7 +213,7 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
             <Button
               onClick={handleRedeem}
               disabled={isLoading}
-              className="flex-1 gap-2 bg-rose-500 hover:bg-rose-600 text-white"
+              className="flex-1 gap-2"
             >
               {isLoading ? (
                 <>

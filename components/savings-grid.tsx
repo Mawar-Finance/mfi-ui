@@ -86,7 +86,7 @@ export default function SavingsGrid({ bouquetsData, onSelectBouquet, onDeposit }
             <Button
               onClick={handleRefresh}
               disabled={isLoading}
-              variant="outline"
+              variant="ghost"
               className="gap-2"
               title="Refresh bouquet data"
             >
@@ -95,7 +95,7 @@ export default function SavingsGrid({ bouquetsData, onSelectBouquet, onDeposit }
             </Button>
             <Button
               onClick={() => setShowBuyModal(true)}
-              variant="outline"
+              variant="ghost"
               className="gap-2 border-green-500/30 text-green-600 hover:bg-green-500/10 dark:text-green-400"
             >
               <ShoppingCart className="w-4 h-4" />
@@ -103,7 +103,7 @@ export default function SavingsGrid({ bouquetsData, onSelectBouquet, onDeposit }
             </Button>
             <Button
               onClick={onDeposit}
-              className="gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-md"
+              className="gap-2"
             >
               <Plus className="w-4 h-4" />
               Deposit MFI
