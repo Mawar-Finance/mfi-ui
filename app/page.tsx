@@ -42,6 +42,7 @@ export default function Home() {
         bouquet={selectedBouquet}
         isOpen={!!selectedBouquetId}
         onClose={() => setSelectedBouquetId(null)}
+        onRefresh={refresh}
       />
       <DepositModal 
         isOpen={showDepositModal} 
