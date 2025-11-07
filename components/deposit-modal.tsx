@@ -78,10 +78,10 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
           await onSuccess()
         }, 3000)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error depositing:", err)
       toast.error("Deposit failed", {
-        description: err.message || "Please try again",
+        description: (err as Error).message || "Please try again",
       })
     } finally {
       setIsLoading(false)
@@ -166,7 +166,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
           {/* Action buttons */}
           <div className="flex gap-2 pt-2">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={onClose}
               className="flex-1 bg-transparent"
               disabled={isLoading}
@@ -176,7 +176,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
             <Button
               onClick={handleDeposit}
               disabled={isLoading || roses === 0}
-              className="flex-1 gap-2 bg-rose-500 hover:bg-rose-600 text-white"
+              className="flex-1 gap-2"
             >
               {isLoading ? (
                 <>
