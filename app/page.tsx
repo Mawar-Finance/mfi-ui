@@ -47,6 +47,7 @@ export default function Home() {
         isOpen={showDepositModal} 
         onClose={() => setShowDepositModal(false)}
         onSuccess={refresh}
+        mfiBalance={bouquetsData.mfiBalance}
       />
     </div>
   )

@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sparkles, Coins, TrendingUp } from "lucide-react"
-import { useBouquets } from "@/hooks/useBouquets"
 import { useContract } from "@/hooks/useContract"
 import { approveMFI, depositMFI, formatMFI, needsApproval } from "@/lib/contract"
 import { toast } from "sonner"
@@ -16,10 +15,10 @@ interface DepositModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: () => void | Promise<void>
+  mfiBalance: bigint
 }
 
-export default function DepositModal({ isOpen, onClose, onSuccess }: DepositModalProps) {
-  const { mfiBalance } = useBouquets()
+export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }: DepositModalProps) {
   const { client, account } = useContract()
   const [amount, setAmount] = useState("10")
   const [isLoading, setIsLoading] = useState(false)
