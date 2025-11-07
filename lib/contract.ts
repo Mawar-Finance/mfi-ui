@@ -226,7 +226,7 @@ export async function getUserBouquets(client: any, userAddress: string): Promise
 }
 
 /**
- * Get detailed bouquet data for a token ID
+ * Get detailed bouquet data for a token ID including NFT metadata
  */
 export async function getBouquetDetails(client: any, tokenId: bigint): Promise<Bouquet> {
   const nftContract = getContract({
@@ -243,67 +243,54 @@ export async function getBouquetDetails(client: any, tokenId: bigint): Promise<B
       params: [tokenId],
     })
 
-    // Try to get value - if this fails, we'll calculate it from rose count
-    let value: bigint
-    let roseCount: number
+    // Get rose count using roseCountOf
+    const roseCount = await readContract({
+      contract: nftContract,
+      method: 'function roseCountOf(uint256 tokenId) view returns (uint8)',
+      params: [tokenId],
+    })
+
+    // Calculate value from rose count (each rose = 10 MFI = 10e18 wei)
+    const value = BigInt(Number(roseCount)) * 10n * 10n ** 18n
+
+    // Get metadata URI
+    let metadataURI: string | undefined
+    let image: string | undefined
+    let name: string | undefined
 
     try {
-      // Try getValue function
-      value = await readContract({
+      metadataURI = await readContract({
         contract: nftContract,
-        method: 'function getValue(uint256 tokenId) view returns (uint256)',
+        method: 'function tokenURI(uint256 tokenId) view returns (string)',
         params: [tokenId],
-      }) as bigint
-      
-      // Calculate rose count from value (each rose = 10 MFI = 10e18 wei)
-      roseCount = Number(value / (10n * 10n ** 18n))
-    } catch (err) {
-      console.log('getValue not available, trying getRoseCount:', err)
-      
-      // Try getRoseCount function
-      try {
-        const count = await readContract({
-          contract: nftContract,
-          method: 'function getRoseCount(uint256 tokenId) view returns (uint256)',
-          params: [tokenId],
-        })
-        roseCount = Number(count)
-        value = BigInt(roseCount) * 10n * 10n ** 18n
-      } catch (err2) {
-        console.log('getRoseCount not available, using tokenURI:', err2)
-        
-        // Fallback: try to get from SavingsVault
-        const vaultContract = getContract({
-          client,
-          chain: liskSepolia,
-          address: SAVINGS_VAULT_ADDRESS,
-        })
-        
+      }) as string
+
+      // Fetch metadata from IPFS
+      if (metadataURI) {
         try {
-          // Try to preview redeem to get the value
-          const preview = await readContract({
-            contract: vaultContract,
-            method: 'function previewRedeem(uint256 tokenId) view returns (uint256 principal, uint256 fee, uint256 payout)',
-            params: [tokenId],
-          })
-          
-          value = preview[0] as bigint // principal
-          roseCount = Number(value / (10n * 10n ** 18n))
-        } catch (err3) {
-          console.error('All methods failed, using defaults:', err3)
-          // Last resort: assume 1 rose
-          roseCount = 1
-          value = 10n * 10n ** 18n
+          const response = await fetch(metadataURI)
+          if (response.ok) {
+            const metadata = await response.json()
+            image = metadata.image
+            name = metadata.name
+          }
+        } catch (fetchErr) {
+          console.warn(`Failed to fetch metadata from ${metadataURI}:`, fetchErr)
         }
       }
+    } catch (uriErr) {
+      console.warn(`Failed to get tokenURI for ${tokenId}:`, uriErr)
     }
 
     return {
       tokenId,
       owner: owner as string,
-      roseCount,
+      roseCount: Number(roseCount),
       totalValue: value,
       exists: true,
+      image,
+      name,
+      metadataURI,
     }
   } catch (err) {
     console.error(`Failed to fetch bouquet ${tokenId}:`, err)

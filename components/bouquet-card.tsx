@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Sparkles, Coins } from "lucide-react"
@@ -55,27 +56,59 @@ export default function BouquetCard({ bouquet }: { bouquet: Bouquet }) {
     <Card
       className={`overflow-hidden transition-all duration-300 ease-out animate-grow border-2 cursor-pointer group hover:shadow-lg hover:-translate-y-1 ${ROSE_COUNT_BORDERS[colorCategory]} hover:border-opacity-100`}
     >
-      {/* Bouquet visualization */}
+      {/* Bouquet visualization - show NFT image if available, otherwise show roses */}
       <div className={`h-48 flex items-center justify-center relative overflow-hidden transition-all duration-300 ease-out bg-linear-to-b ${ROSE_COUNT_COLORS[colorCategory]} ${ROSE_COUNT_HOVER[colorCategory]}`}>
-        <div className="flex flex-wrap gap-2 justify-center items-center max-w-[200px]">
-          {renderRoses(bouquet.roseCount)}
-        </div>
+        {bouquet.image ? (
+          // Display NFT image from IPFS - click to view full size
+          <div 
+            className="relative w-full h-full group/image cursor-zoom-in"
+            onClick={(e) => {
+              e.stopPropagation()
+              window.open(bouquet.image, '_blank')
+            }}
+            title="Click to view full image"
+          >
+            <Image 
+              src={bouquet.image} 
+              alt={bouquet.name || `Bouquet #${bouquet.tokenId.toString()}`}
+              fill
+              className="object-cover transition-transform duration-300 group-hover/image:scale-105"
+              unoptimized
+            />
+            {/* Hover overlay hint */}
+            <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/20 transition-all duration-300 flex items-center justify-center pointer-events-none">
+              <span className="text-white text-xs font-medium opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 flex items-center gap-1 bg-black/50 px-2 py-1 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                View full
+              </span>
+            </div>
+          </div>
+        ) : (
+          // Fallback to rose emojis if image not loaded yet
+          <div className="flex flex-wrap gap-2 justify-center items-center max-w-[200px]">
+            {renderRoses(bouquet.roseCount)}
+          </div>
+        )}
         
         {/* Decorations */}
         {bouquet.roseCount >= 5 && (
           <>
-            <div className="absolute top-3 left-3 animate-bounce-in">
+            <div className="absolute top-3 left-3 animate-bounce-in pointer-events-none">
               <Sparkles className="w-6 h-6 text-yellow-500" />
             </div>
-            <div className="absolute top-6 right-6 text-2xl animate-pulse">✨</div>
+            <div className="absolute top-6 right-6 text-2xl animate-pulse pointer-events-none">✨</div>
           </>
         )}
         
         {bouquet.roseCount === 10 && (
           <>
-            <div className="absolute bottom-6 left-6 text-xl opacity-50 animate-bounce">🌺</div>
-            <div className="absolute bottom-6 right-6 text-xl opacity-50 animate-bounce delay-100">🦋</div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl animate-pulse opacity-20">
+            <div className="absolute bottom-6 left-6 text-xl opacity-50 animate-bounce pointer-events-none">🌺</div>
+            <div className="absolute bottom-6 right-6 text-xl opacity-50 animate-bounce delay-100 pointer-events-none">🦋</div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl animate-pulse opacity-20 pointer-events-none">
               👑
             </div>
           </>
@@ -86,7 +119,9 @@ export default function BouquetCard({ bouquet }: { bouquet: Bouquet }) {
       <div className="p-4 space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="font-semibold text-foreground text-lg">Bouquet #{bouquet.tokenId.toString()}</h3>
+            <h3 className="font-semibold text-foreground text-lg">
+              {bouquet.name || `Bouquet #${bouquet.tokenId.toString()}`}
+            </h3>
             <div className="flex gap-2 mt-1 flex-wrap">
               <span className={`inline-block px-2 py-1 rounded text-xs font-medium bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30`}>
                 {bouquet.roseCount} {bouquet.roseCount === 1 ? 'Rose' : 'Roses'}

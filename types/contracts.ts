@@ -9,6 +9,10 @@ export interface Bouquet {
   roseCount: number // 1-10 roses (each rose = 10 MFI deposited)
   totalValue: bigint // Total MFI value in wei (18 decimals)
   exists: boolean
+  // NFT metadata from IPFS
+  image?: string
+  name?: string
+  metadataURI?: string
 }
 
 // Contract addresses dari environment variables
@@ -217,8 +221,8 @@ export const SAVINGS_NFT_ABI = [
   },
   {
     inputs: [{ internalType: 'uint256', name: 'tokenId', type: 'uint256' }],
-    name: 'getRoseCount',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    name: 'roseCountOf',
+    outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
     stateMutability: 'view',
     type: 'function',
   },
