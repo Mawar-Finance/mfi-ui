@@ -63,9 +63,9 @@ export function useBouquets() {
       } else {
         setBouquets([])
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching bouquets:', err)
-      setError(err.message || 'Failed to fetch bouquets')
+      setError((err as Error).message || 'Failed to fetch bouquets')
       // Don't reset balances on error - keep what we have
       if (bouquets.length === 0) {
         setBouquets([])
@@ -73,7 +73,7 @@ export function useBouquets() {
     } finally {
       setIsLoading(false)
     }
-  }, [client, address, isConnected])
+  }, [client, address, isConnected, bouquets.length])
 
   // Auto-fetch on mount and when connection changes
   useEffect(() => {
@@ -81,7 +81,8 @@ export function useBouquets() {
   }, [fetchBouquets])
 
   // Refresh function for manual updates (e.g., after transactions)
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
+    console.log('Refreshing bouquets data...')
     return fetchBouquets()
   }, [fetchBouquets])
 

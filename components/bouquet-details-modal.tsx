@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card } from "@/components/ui/card"
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Sparkles, Coins, TrendingDown, AlertTriangle } from "lucide-react"
 import { Bouquet } from "@/types/contracts"
 import { formatMFI, previewRedeem, redeemNFT } from "@/lib/contract"
-import { useBouquets } from "@/hooks/useBouquets"
 import { useContract } from "@/hooks/useContract"
 import { toast } from "sonner"
 
@@ -17,6 +16,7 @@ interface BouquetDetailsModalProps {
   bouquet: Bouquet | null
   isOpen: boolean
   onClose: () => void
+  onRefresh: () => Promise<void>
 }
 
 function renderRoses(count: number) {
@@ -35,9 +35,8 @@ function renderRoses(count: number) {
   return roses
 }
 
-export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: BouquetDetailsModalProps) {
+export default function BouquetDetailsModal({ bouquet, isOpen, onClose, onRefresh }: BouquetDetailsModalProps) {
   const { client, account } = useContract()
-  const { refresh } = useBouquets()
   const [isLoading, setIsLoading] = useState(false)
   const [redeemPreview, setRedeemPreview] = useState<{
     principal: bigint
@@ -45,26 +44,53 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
     payout: bigint
   } | null>(null)
 
+  // Load preview when modal opens or bouquet changes
+  // Always fetch fresh data from the contract
+  useEffect(() => {
+    const loadPreview = async () => {
+      if (!client || !bouquet || !isOpen) {
+        setRedeemPreview(null)
+        return
+      }
+      
+      try {
+        // Always fetch fresh preview from contract using the token ID
+        const preview = await previewRedeem(client, bouquet.tokenId)
+        setRedeemPreview(preview)
+      } catch (err) {
+        console.error("Error loading preview for token", bouquet.tokenId, ":", err)
+        setRedeemPreview(null)
+      }
+    }
+
+    loadPreview()
+    // Re-fetch whenever modal opens or bouquet changes
+  }, [client, isOpen, bouquet, bouquet?.tokenId])
+
+  // Load preview when modal opens or bouquet changes
+  useEffect(() => {
+    const loadPreview = async () => {
+      if (!client || !bouquet || !isOpen) {
+        setRedeemPreview(null)
+        return
+      }
+      
+      try {
+        const preview = await previewRedeem(client, bouquet.tokenId)
+        setRedeemPreview(preview)
+      } catch (err) {
+        console.error("Error loading preview:", err)
+        setRedeemPreview(null)
+      }
+    }
+
+    loadPreview()
+  }, [client, bouquet, isOpen, bouquet?.tokenId, bouquet?.totalValue])
+
   if (!bouquet) return null
 
   const progress = (bouquet.roseCount / 10) * 100
   const mfiValue = formatMFI(bouquet.totalValue)
-
-  // Load preview when modal opens
-  const loadPreview = async () => {
-    if (!client || !bouquet) return
-    try {
-      const preview = await previewRedeem(client, bouquet.tokenId)
-      setRedeemPreview(preview)
-    } catch (err) {
-      console.error("Error loading preview:", err)
-    }
-  }
-
-  // Load preview on mount
-  if (isOpen && !redeemPreview) {
-    loadPreview()
-  }
 
   const handleRedeem = async () => {
     if (!client || !account) {
@@ -84,8 +110,21 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
         description: `You received ${redeemPreview ? formatMFI(redeemPreview.payout) : '—'} MFI 🎉`,
       })
 
-      await refresh()
+      // Close modal immediately for better UX
       onClose()
+      
+      // Refresh data in the background
+      try {
+        await onRefresh()
+        toast.success("Data updated!", {
+          description: "Your savings have been refreshed",
+        })
+      } catch (refreshError) {
+        console.error("Error refreshing data:", refreshError)
+        toast.info("Please refresh manually", {
+          description: "Click the refresh button to see updated data",
+        })
+      }
     } catch (err: unknown) {
       console.error("Error redeeming:", err)
       toast.error("Redemption failed", {
