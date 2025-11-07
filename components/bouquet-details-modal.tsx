@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -101,31 +102,60 @@ export default function BouquetDetailsModal({ bouquet, isOpen, onClose }: Bouque
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-3xl">🌹</span>
-            Bouquet #{bouquet.tokenId.toString()}
+            {bouquet.name || `Bouquet #${bouquet.tokenId.toString()}`}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Bouquet visualization */}
-          <div className="h-48 rounded-lg flex items-center justify-center relative overflow-hidden bg-linear-to-b from-rose-50 to-pink-50 dark:from-rose-950 dark:to-pink-950">
-            <div className="flex flex-wrap gap-2 justify-center items-center max-w-[250px]">
-              {renderRoses(bouquet.roseCount)}
-            </div>
+          {/* Bouquet visualization - show NFT image or fallback to roses */}
+          <div 
+            className={`h-48 rounded-lg flex items-center justify-center relative overflow-hidden bg-linear-to-b from-rose-50 to-pink-50 dark:from-rose-950 dark:to-pink-950 ${bouquet.image ? 'cursor-pointer group/image' : ''}`}
+            onClick={() => bouquet.image && window.open(bouquet.image, '_blank')}
+            title={bouquet.image ? 'Click to view full image' : ''}
+          >
+            {bouquet.image ? (
+              <>
+                <div className="relative w-full h-full">
+                  <Image 
+                    src={bouquet.image} 
+                    alt={bouquet.name || `Bouquet #${bouquet.tokenId.toString()}`}
+                    fill
+                    className="object-cover rounded-lg transition-transform duration-300 group-hover/image:scale-105"
+                    unoptimized
+                  />
+                </div>
+                {/* Overlay hint on hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                  <span className="text-white text-sm font-medium opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    View full image
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-wrap gap-2 justify-center items-center max-w-[250px]">
+                {renderRoses(bouquet.roseCount)}
+              </div>
+            )}
             
             {bouquet.roseCount >= 5 && (
               <>
-                <div className="absolute top-4 left-4 animate-bounce-in">
+                <div className="absolute top-4 left-4 animate-bounce-in pointer-events-none">
                   <Sparkles className="w-7 h-7 text-yellow-500" />
                 </div>
-                <div className="absolute top-6 right-6 text-3xl animate-pulse">✨</div>
+                <div className="absolute top-6 right-6 text-3xl animate-pulse pointer-events-none">✨</div>
               </>
             )}
             
             {bouquet.roseCount === 10 && (
               <>
-                <div className="absolute bottom-6 left-6 text-2xl opacity-50 animate-bounce">🌺</div>
-                <div className="absolute bottom-6 right-6 text-2xl opacity-50 animate-bounce delay-100">🦋</div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl animate-pulse opacity-20">
+                <div className="absolute bottom-6 left-6 text-2xl opacity-50 animate-bounce pointer-events-none">🌺</div>
+                <div className="absolute bottom-6 right-6 text-2xl opacity-50 animate-bounce delay-100 pointer-events-none">🦋</div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl animate-pulse opacity-20 pointer-events-none">
                   👑
                 </div>
               </>
