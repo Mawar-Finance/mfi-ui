@@ -8,8 +8,8 @@ const geist = Geist({ subsets: ["latin"] })
 const geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Lisk Garden - Web3 Garden Game",
-  description: "Grow your virtual garden on the Lisk blockchain",
+  title: "Mawar Finance",
+  description: "Decentralized Savings Bouquets on Lisk",
 }
 
 export default function RootLayout({
