@@ -42,7 +42,7 @@ export default function BuyMFIModal({ isOpen, onClose, onSuccess }: BuyMFIModalP
 
       await buyMFI(client, account, ethAmount)
 
-      const mfiReceived = amount * 300_000_000
+      const mfiReceived = amount * 3000
       toast.success("Purchase successful!", {
         description: `You received ${mfiReceived.toLocaleString()} MFI tokens 🎉`,
       })
@@ -65,7 +65,7 @@ export default function BuyMFIModal({ isOpen, onClose, onSuccess }: BuyMFIModalP
     }
   }
 
-  const mfiAmount = (parseFloat(ethAmount || "0") * 300_000_000).toLocaleString()
+  const mfiAmount = (parseFloat(ethAmount || "0") * 3000).toLocaleString()
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -83,7 +83,7 @@ export default function BuyMFIModal({ isOpen, onClose, onSuccess }: BuyMFIModalP
           <Card className="p-4 bg-blue-500/10 border-blue-500/30">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Exchange Rate</span>
-              <span className="font-bold text-foreground">1 ETH = 300,000,000 MFI</span>
+              <span className="font-bold text-foreground">1 ETH = 3,000 MFI</span>
             </div>
           </Card>
 

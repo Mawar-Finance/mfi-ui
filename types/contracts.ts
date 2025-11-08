@@ -25,7 +25,7 @@ export const SAVINGS_VAULT_ADDRESS = process.env.NEXT_PUBLIC_SAVINGS_VAULT_ADDRE
 export const MFI_PER_ROSE = 10n // 10 MFI per rose
 export const MAX_ROSES_PER_BOUQUET = 10n // Max 10 roses per bouquet
 export const FEE_BASIS_POINTS = 250n // 2.5% platform fee
-export const EXCHANGE_RATE = 300_000_000n // 300M MFI per 1 ETH (1 MFI = 0.00000001 ETH)
+export const EXCHANGE_RATE = 3000n // 3000 MFI per 1 ETH (1 MFI = $1 USD)
 
 // ============================================
 // MFI TOKEN (ERC20) ABI
