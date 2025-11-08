@@ -120,7 +120,7 @@ export default function StatsSidebar({ bouquetsData, selectedBouquetId }: StatsS
         <div className="space-y-3 text-sm">
           <div className="p-3 rounded bg-blue-500/10 border border-blue-500/20">
             <p className="text-xs text-muted-foreground mb-1">1 ETH</p>
-            <p className="font-semibold text-foreground">= 300,000,000 MFI</p>
+            <p className="font-semibold text-foreground">= 3,000 MFI</p>
           </div>
           <div className="p-3 rounded bg-rose-500/10 border border-rose-500/20">
             <p className="text-xs text-muted-foreground mb-1">Redemption Fee</p>

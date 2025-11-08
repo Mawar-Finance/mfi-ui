@@ -20,7 +20,6 @@ interface DepositModalProps {
 
 export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }: DepositModalProps) {
   const { client, account } = useContract()
-  const [amount, setAmount] = useState("10")
   const [isLoading, setIsLoading] = useState(false)
 
   const handleDeposit = async () => {
@@ -29,34 +28,28 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
       return
     }
 
-    const depositAmount = parseFloat(amount)
-    if (isNaN(depositAmount) || depositAmount <= 0) {
-      toast.error("Please enter a valid amount")
-      return
-    }
-
-    if (depositAmount < 10) {
-      toast.error("Minimum deposit is 10 MFI (1 rose)")
-      return
-    }
+    // Fixed deposit amount of 10 MFI
+    const depositAmount = "10"
 
     // Check balance
     const balance = Number(mfiBalance) / Number(10n ** 18n)
-    if (depositAmount > balance) {
-      toast.error("Insufficient MFI balance")
+    if (parseFloat(depositAmount) > balance) {
+      toast.error("Insufficient MFI balance", {
+        description: `You need at least 10 MFI. Current balance: ${balance.toFixed(2)} MFI`,
+      })
       return
     }
 
     setIsLoading(true)
     try {
       // Check if approval is needed
-      const needsApprovalCheck = await needsApproval(client, account.address, amount)
+      const needsApprovalCheck = await needsApproval(client, account.address, depositAmount)
       
       if (needsApprovalCheck) {
         toast.info("Approving MFI...", {
           description: "Please confirm the approval transaction",
         })
-        await approveMFI(client, account, amount)
+        await approveMFI(client, account, depositAmount)
         toast.success("Approval successful!")
       }
 
@@ -64,14 +57,13 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
       toast.info("Depositing MFI...", {
         description: "Please confirm the deposit transaction",
       })
-      await depositMFI(client, account, amount)
+      await depositMFI(client, account, depositAmount)
 
       toast.success("Deposit successful!", {
-        description: `${amount} MFI deposited. Your bouquet will update shortly! 🌹`,
+        description: `10 MFI deposited. Your bouquet will update shortly! 🌹`,
       })
 
       onClose()
-      setAmount("10")
       
       if (onSuccess) {
         setTimeout(async () => {
@@ -88,7 +80,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
     }
   }
 
-  const roses = Math.floor(parseFloat(amount || "0") / 10)
+  const roses = 1 // Fixed at 1 rose for 10 MFI deposit
   const mfiBalanceFormatted = formatMFI(mfiBalance, 2)
 
   return (
@@ -117,16 +109,15 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
             <Label htmlFor="amount">Deposit Amount (MFI)</Label>
             <Input
               id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              type="text"
+              value="10"
               placeholder="10"
-              min="10"
-              step="10"
               disabled={isLoading}
+              readOnly
+              className="cursor-not-allowed bg-muted/50"
             />
             <p className="text-xs text-muted-foreground">
-              Minimum: 10 MFI (1 rose) • Recommended: Multiples of 10
+              Fixed amount: 10 MFI = 1 rose 🌹
             </p>
           </div>
 
@@ -134,18 +125,13 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
           <Card className="p-4 border-2 border-rose-500/30 bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-950/20 dark:to-pink-950/20">
             <div className="text-center">
               <div className="text-4xl mb-3">
-                {roses > 0 ? '🌹'.repeat(Math.min(roses, 10)) : '—'}
+                🌹
               </div>
               <h3 className="font-bold text-lg text-foreground mb-2">
-                {roses === 0 ? 'Enter Amount' : `+${roses} Rose${roses > 1 ? 's' : ''}`}
+                +1 Rose
               </h3>
               <p className="text-sm text-muted-foreground">
-                {roses === 0 
-                  ? 'Deposit at least 10 MFI to get 1 rose'
-                  : roses > 10
-                    ? `⚠️ Exceeds 10 roses - will create multiple bouquets`
-                    : `Each rose represents 10 MFI deposited`
-                }
+                You will receive 1 rose for your bouquet
               </p>
             </div>
           </Card>
@@ -175,7 +161,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
             </Button>
             <Button
               onClick={handleDeposit}
-              disabled={isLoading || roses === 0}
+              disabled={isLoading}
               className="flex-1 gap-2"
             >
               {isLoading ? (
@@ -186,7 +172,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess, mfiBalance }:
               ) : (
                 <>
                   <TrendingUp className="w-4 h-4" />
-                  Deposit {amount} MFI
+                  Deposit 10 MFI
                 </>
               )}
             </Button>
